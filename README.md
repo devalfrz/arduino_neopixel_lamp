@@ -10,8 +10,8 @@ Simple lamp script with neopixels.
 ### Animations
 
 * RAINBOW: Simple animation modified from the NeoPixel standtest.
-* FIXED: Fixes the color of the first led in the previews animation.
 * RAINBOW2: Very slow rainbow animation. Sets most of the strip to the same color.
+* FIXED: Fixes the last color.
 * WHITE: White :)
 
 

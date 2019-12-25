@@ -1,5 +1,5 @@
 /*
-  Arduino NeoPixel Lamp v1.0
+  Arduino NeoPixel Lamp v1.0.1
 
   Simple lamp script with neopixels.
 
@@ -9,8 +9,8 @@
 
    Animations:
     - RAINBOW: Simple animation modified from the NeoPixel standtest.
-    - FIXED: Fixes the color of the first led in the previews animation.
     - RAINBOW2: Very slow rainbow animation. Sets most of the strip to the same color.
+    - FIXED: Fixes the last color.
     - WHITE: White :)
 
   Alfredo Rius
@@ -21,21 +21,21 @@
 #include <Adafruit_NeoPixel.h>
 #include <EEPROM.h>
 
-#define LED_COUNT 8
+#define LED_COUNT 16
 
 #define LED_PIN     A3
 #define BUTTON_PIN  2
 
 #define RAINBOW  0
-#define FIXED    1
-#define RAINBOW2 2
+#define RAINBOW2 1
+#define FIXED    2
 #define WHITE    3
 #define LAST_STATE WHITE
 
 #define RAINBOW_SPEED 256
 #define RAINBOW2_SPEED 10
 
-#define DEBOUNCE 300
+#define DEBOUNCE 500
 
 #define STATE_ADDR 0
 #define HUE_ADDR   1
@@ -44,10 +44,11 @@ Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 uint16_t pixelHue;
 uint8_t state = 0;
 unsigned long last_button;
+uint8_t startup;
 
 void setup() {
   // Init hardware
-  pinMode(BUTTON_PIN,INPUT);
+  pinMode(BUTTON_PIN,INPUT_PULLUP);
   strip.begin();
   strip.show();
   strip.setBrightness(255);
@@ -60,6 +61,9 @@ void setup() {
   // Button interrupt
   last_button = millis();
   attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), button, FALLING);
+
+  // Reset startup
+  startup = 1;
 }
 
 void loop() {
@@ -68,9 +72,22 @@ void loop() {
   }else if(state == RAINBOW2){
     rainbow(10,LED_COUNT*50,state);
   }else if(state == FIXED){
-    setColor(pixelHue);
+    // The lamp will blink twice to show that te
+    // state has changed.
+    if(!startup){
+      setHUE(pixelHue);
+      delay(300);
+      setColor(strip.Color(0,0,0));
+      delay(300);
+      setHUE(pixelHue);
+      delay(300);
+      setColor(strip.Color(0,0,0));
+      delay(300);
+    }
+    setHUE(pixelHue);
+    while(state == FIXED)delay(10);
   }else if(state == WHITE){
-    setWhite();
+    setColor(strip.Color(255,255,255));
   }
   delay(100);
 }
@@ -97,6 +114,9 @@ void button(){
   // Button ISR
   unsigned long this_button = millis();
 
+  // If any state change is detected, then, this is not the startup.
+  startup = 0;
+
   // Check debounce
   if(last_button + DEBOUNCE < this_button){
     if(state >= LAST_STATE){
@@ -114,7 +134,7 @@ void button(){
   }  
 }
 
-void setColor(uint16_t hue) {
+void setHUE(uint16_t hue) {
   // Simple set hue
   for(uint16_t i=0; i<strip.numPixels(); i++) {
     strip.setPixelColor(i, strip.gamma32(strip.ColorHSV(hue)));
@@ -122,10 +142,10 @@ void setColor(uint16_t hue) {
   strip.show();
 }
 
-void setWhite() {
+void setColor(uint32_t color) {
   // Simple set white
   for(uint16_t i=0; i<strip.numPixels(); i++) {
-    strip.setPixelColor(i, strip.Color(255,255,255));
+    strip.setPixelColor(i, color);
   }
   strip.show();
 }
