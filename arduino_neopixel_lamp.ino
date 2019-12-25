@@ -72,9 +72,9 @@ void loop() {
   }else if(state == RAINBOW2){
     rainbow(10,LED_COUNT*50,state);
   }else if(state == FIXED){
-    // The lamp will blink twice to show that te
-    // state has changed.
     if(!startup){
+      // The lamp will blink twice to show that the
+      // state has changed.
       setHUE(pixelHue);
       delay(300);
       setColor(strip.Color(0,0,0));
